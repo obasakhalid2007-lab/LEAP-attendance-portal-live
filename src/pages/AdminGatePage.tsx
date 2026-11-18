@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { AlertCircle, KeyRound, ShieldCheck } from 'lucide-react';
@@ -5,16 +6,33 @@ import { useStore } from '@/lib/store';
 
 export function AdminGatePage() {
   const { signInAdmin } = useStore();
-  const [passcode, setPasscode] = useState('');
-  const [error, setError] = useState('');
 
-  const handleSubmit = (e: FormEvent) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (passcode.trim() === 'leap-admin-2026') {
-      signInAdmin();
-    } else {
-      setError('Incorrect passcode. This area is restricted to faculty staff.');
+
+    if (!email.trim() || !password) {
+      setError('Enter your administrator email and password.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await signInAdmin(email.trim(), password);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Administrator login failed. Check your details.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -24,15 +42,14 @@ export function AdminGatePage() {
         <div className="h-12 w-12 rounded-xl bg-slate-950 text-blue-400 flex items-center justify-center mb-5">
           <ShieldCheck className="h-7 w-7" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-1">Staff administration</h1>
-        <p className="text-sm text-slate-500 mb-6">
-          This dashboard is restricted to authorised faculty staff. Students cannot access it — when
-          Supabase authentication is connected, admin rights will be enforced server-side.
-        </p>
 
-        <div className="mb-6 rounded-xl bg-blue-50 border border-blue-100 p-3.5 text-sm text-blue-900">
-          Demonstration passcode: <span className="font-semibold">leap-admin-2026</span>
-        </div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">
+          Staff administration
+        </h1>
+
+        <p className="text-sm text-slate-500 mb-6">
+          Sign in using your authorised administrator account.
+        </p>
 
         {error && (
           <div className="mb-5 flex gap-3 rounded-xl bg-red-50 border border-red-100 p-3.5 text-sm text-red-800">
@@ -43,25 +60,52 @@ export function AdminGatePage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="passcode" className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Staff passcode
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Administrator email
             </label>
+
             <input
-              id="passcode"
-              type="password"
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Enter staff passcode"
-              autoComplete="current-password"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your registered email"
+              autoComplete="username"
+              required
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
             />
           </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold text-slate-700 mb-1.5"
+            >
+              Password
+            </label>
+
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              required
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition"
+            />
+          </div>
+
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-white font-semibold py-3.5 shadow-lg transition-colors"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-slate-950 hover:bg-slate-800 disabled:opacity-60 text-white font-semibold py-3.5 shadow-lg transition-colors"
           >
             <KeyRound className="h-4 w-4" />
-            Enter admin dashboard
+            {loading ? 'Signing in...' : 'Enter admin dashboard'}
           </button>
         </form>
       </div>
