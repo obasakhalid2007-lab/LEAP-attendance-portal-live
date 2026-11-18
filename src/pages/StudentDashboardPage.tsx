@@ -18,7 +18,7 @@ export function StudentDashboardPage() {
   const [error, setError] = useState('');
 
   const student = students.find(
-    (s) => s.id === viewer.studentId
+    (s) => s.id === (viewer.role === 'student' ? viewer.studentId : '')
   );
 
   const myRecords = useMemo(
@@ -70,16 +70,23 @@ export function StudentDashboardPage() {
     );
   }
 
-  const totalRelevant = sessions.filter(
+  const today = new Date().toISOString().slice(0, 10);
+
+  const completedSessions = sessions.filter(
     (s) =>
+      s.date <= today &&
       (s.department === 'All Departments' ||
         s.department === student.department) &&
       (s.level === 'All Levels' || s.level === student.level)
+  );
+
+  const attendedCompleted = myRecords.filter((record) =>
+    completedSessions.some((session) => session.id === record.sessionId)
   ).length;
 
   const percentage =
-    totalRelevant > 0
-      ? Math.round((myRecords.length / totalRelevant) * 100)
+    completedSessions.length > 0
+      ? Math.round((attendedCompleted / completedSessions.length) * 100)
       : 0;
 
   const markedOpen = availableSessions.filter((session) =>
@@ -223,9 +230,7 @@ export function StudentDashboardPage() {
                   </div>
 
                   <p className="text-sm text-slate-500">
-                    {new Date(
-                      session.date + 'T00:00:00'
-                    ).toLocaleDateString('en-GB', {
+                    {new Date(session.date + 'T00:00:00').toLocaleDateString('en-GB', {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'long',
