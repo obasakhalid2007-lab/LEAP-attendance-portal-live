@@ -7,6 +7,7 @@ import {
   Lock,
   Unlock,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { DEPARTMENTS } from '@/lib/types';
@@ -30,8 +31,11 @@ const emptyForm = {
   endTime: '10:00',
 };
 
+const csvCell = (value: unknown) =>
+  `"${String(value ?? '').replace(/"/g, '""')}"`;
+
 export function AdminSessionsPage() {
-  const { sessions, records, createSession, setSessionStatus, deleteSession } = useStore();
+  const { sessions, records, students, createSession, setSessionStatus, deleteSession } = useStore();
 
   const [form, setForm] = useState(emptyForm);
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all');
@@ -45,16 +49,64 @@ export function AdminSessionsPage() {
 
     return sessions
       .filter((s) => statusFilter === 'all' || s.status === statusFilter)
-      .filter(
-        (s) =>
-          !q ||
-          s.title.toLowerCase().includes(q) ||
-          s.courseCode.toLowerCase().includes(q)
+      .filter((s) =>
+        !q ||
+        s.title.toLowerCase().includes(q) ||
+        s.courseCode.toLowerCase().includes(q)
       )
       .sort((a, b) =>
         (b.date + b.startTime).localeCompare(a.date + a.startTime)
       );
   }, [sessions, statusFilter, query]);
+
+  const handleExport = () => {
+    const rows = records.map((record) => {
+      const student = students.find((s) => s.id === record.studentId);
+      const session = sessions.find((s) => s.id === record.sessionId);
+
+      return [
+        student?.fullName ?? 'Unknown student',
+        student?.matricNumber ?? '',
+        student?.department ?? '',
+        student?.level ?? '',
+        session?.courseCode ?? '',
+        session?.title ?? '',
+        session?.date ?? '',
+        session?.startTime ?? '',
+        session?.endTime ?? '',
+        record.markedAt,
+      ];
+    });
+
+    const headers = [
+      'Student Name',
+      'Matric Number',
+      'Department',
+      'Level',
+      'Course Code',
+      'Session Title',
+      'Session Date',
+      'Start Time',
+      'End Time',
+      'Marked At',
+    ];
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map(csvCell).join(','))
+      .join('\r\n');
+
+    const blob = new Blob(['\uFEFF' + csv], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `LEAP-attendance-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -155,6 +207,16 @@ export function AdminSessionsPage() {
             {success}
           </p>
         )}
+
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={records.length === 0}
+          className="mb-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" />
+          Download Attendance CSV
+        </button>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <input
