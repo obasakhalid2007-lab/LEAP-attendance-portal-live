@@ -26,7 +26,7 @@ export function LoginPage() {
 
     try {
       const { data, error: functionError } =
-        await supabase.functions.invoke('leap-matric-login', {
+        await supabase.functions.invoke('clever-function', {
           body: {
             matricNumber: matricNumber.trim(),
             password,
