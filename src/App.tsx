@@ -17,7 +17,10 @@ function RequireStudent({ children }: { children: ReactNode }) {
     return <div className="p-8 text-center">Checking your account...</div>;
   }
 
-  if (!viewer || viewer.role !== 'student') {
+  if (
+    !viewer ||
+    (viewer.role !== 'student' && viewer.role !== 'admin')
+  ) {
     return <Navigate to="/login" replace />;
   }
 
