@@ -18,7 +18,7 @@ import type {
 type Viewer =
   | { role: 'guest' }
   | { role: 'student'; studentId: string }
-  | { role: 'admin' };
+  | { role: 'admin'; studentId: string };
 
 interface StoreValue {
   students: Student[];
@@ -105,7 +105,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     setViewer(
       isAdmin
-        ? { role: 'admin' }
+        ? { role: 'admin', studentId: userId }
         : { role: 'student', studentId: userId }
     );
 
