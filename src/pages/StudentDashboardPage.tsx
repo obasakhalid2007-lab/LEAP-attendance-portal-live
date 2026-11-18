@@ -17,9 +17,12 @@ export function StudentDashboardPage() {
   const [markingSessionId, setMarkingSessionId] = useState('');
   const [error, setError] = useState('');
 
-  const student = students.find(
-    (s) => s.id === (viewer.role === 'student' ? viewer.studentId : '')
-  );
+  const studentId =
+    viewer.role === 'student' || viewer.role === 'admin'
+      ? viewer.studentId
+      : '';
+
+  const student = students.find((s) => s.id === studentId);
 
   const myRecords = useMemo(
     () => (student ? records.filter((r) => r.studentId === student.id) : []),
@@ -147,7 +150,9 @@ export function StudentDashboardPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="mb-8">
         <p className="text-sm font-medium text-blue-700 uppercase tracking-wide">
-          Student dashboard
+          {viewer.role === 'admin'
+            ? 'Admin · My student dashboard'
+            : 'Student dashboard'}
         </p>
 
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
