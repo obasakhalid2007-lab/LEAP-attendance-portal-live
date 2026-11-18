@@ -110,9 +110,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
 
     const [sessionResult, recordResult] = await Promise.all([
-      supabase.from('attendance_sessions').select('*').order('date', {
-        ascending: false,
-      }),
+      supabase
+        .from('attendance_sessions')
+        .select('*')
+        .order('date', { ascending: false }),
       supabase.from('attendance_records').select('*'),
     ]);
 
@@ -163,7 +164,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') return;
       void loadSession(session?.user.id ?? null);
     });
 
@@ -194,7 +196,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (profileError || profile?.role !== 'admin') {
           await supabase.auth.signOut();
           clearData();
-          throw new Error('This account does not have administrator access.');
+          throw new Error(
+            'This account does not have administrator access.'
+          );
         }
       } catch (error) {
         await supabase.auth.signOut();
@@ -207,7 +211,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
+
     if (error) throw error;
+
     clearData();
   }, [clearData]);
 
@@ -224,8 +230,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         if (error.code === '23505') {
-          throw new Error('You have already marked attendance for this session.');
+          throw new Error(
+            'You have already marked attendance for this session.'
+          );
         }
+
         throw error;
       }
 
@@ -270,7 +279,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       setSessions((previous) =>
         previous.map((session) =>
-          session.id === sessionId ? { ...session, status } : session
+          session.id === sessionId
+            ? { ...session, status }
+            : session
         )
       );
     },
