@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
@@ -15,7 +14,6 @@ export function RegisterPage() {
     matricNumber: '',
     department: '' as Department | '',
     level: '' as Level | '',
-    email: '',
     password: '',
     confirm: '',
   });
@@ -39,15 +37,9 @@ export function RegisterPage() {
       !form.matricNumber.trim() ||
       !form.department ||
       !form.level ||
-      !form.email.trim() ||
       !form.password
     ) {
       setError('Please fill in every field.');
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setError('Enter a valid email address.');
       return;
     }
 
@@ -64,30 +56,33 @@ export function RegisterPage() {
     setLoading(true);
 
     try {
+      const matricNumber = form.matricNumber.trim().toUpperCase();
+
+      // Private authentication identity; students never need this email.
+      const internalEmail = `${crypto.randomUUID()}@leap.invalid`;
+
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: form.email.trim().toLowerCase(),
+        email: internalEmail,
         password: form.password,
         options: {
           data: {
             full_name: form.fullName.trim(),
-            matric_number: form.matricNumber.trim().toUpperCase(),
+            matric_number: matricNumber,
             department: form.department,
             level: form.level,
-            email: form.email.trim().toLowerCase(),
+            email: internalEmail,
           },
         },
       });
 
-      if (signUpError) {
-        throw signUpError;
-      }
+      if (signUpError) throw signUpError;
 
-      if (data.user && data.user.identities?.length === 0) {
-        throw new Error('This email is already registered. Please sign in.');
+      if (!data.user) {
+        throw new Error('Registration could not be completed. Please try again.');
       }
 
       setSuccess(
-        'Registration successful! Check your email and click the confirmation link before signing in with your matriculation number and password.'
+        'Registration successful! You can now sign in using your matriculation number and password.'
       );
 
       setForm({
@@ -95,7 +90,6 @@ export function RegisterPage() {
         matricNumber: '',
         department: '',
         level: '',
-        email: '',
         password: '',
         confirm: '',
       });
@@ -115,10 +109,7 @@ export function RegisterPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 sm:px-6 py-12 sm:py-16">
-      <Link
-        to="/"
-        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-blue-700 mb-6 transition-colors"
-      >
+      <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 mb-6">
         <ArrowLeft className="h-4 w-4" />
         Back to home
       </Link>
@@ -171,7 +162,7 @@ export function RegisterPage() {
                 required
                 value={form.matricNumber}
                 onChange={set('matricNumber')}
-                placeholder="e.g. MEE/2023/0456"
+                placeholder="Your matric number"
                 className={inputClass}
               />
             </div>
@@ -189,9 +180,7 @@ export function RegisterPage() {
               >
                 <option value="">Select level</option>
                 {levels.map((l) => (
-                  <option key={l} value={l}>
-                    {l} Level
-                  </option>
+                  <option key={l} value={l}>{l} Level</option>
                 ))}
               </select>
             </div>
@@ -210,26 +199,9 @@ export function RegisterPage() {
             >
               <option value="">Select department</option>
               {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
+                <option key={d} value={d}>{d}</option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={form.email}
-              onChange={set('email')}
-              placeholder="Your email address"
-              className={inputClass}
-            />
           </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
@@ -267,7 +239,7 @@ export function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold py-3.5 shadow-lg shadow-blue-600/25 transition-colors"
+            className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold py-3.5 shadow-lg transition-colors"
           >
             {loading ? 'Creating account...' : 'Create account'}
           </button>
@@ -275,7 +247,7 @@ export function RegisterPage() {
 
         <p className="text-sm text-slate-500 text-center mt-6">
           Already registered?{' '}
-          <Link to="/login" className="font-semibold text-blue-700 hover:text-blue-800">
+          <Link to="/login" className="font-semibold text-blue-700">
             Sign in
           </Link>
         </p>
