@@ -2,10 +2,10 @@ export type Level = '100' | '200' | '300' | '400' | '500';
 
 export const DEPARTMENTS = [
   'Mechanical Engineering',
-  'Electrical & Electronics Engineering',
+  'Electronics & Computer Engineering',
   'Civil Engineering',
   'Chemical Engineering',
-  'Computer Engineering',
+  'Electrical Engineering',
 ] as const;
 
 export type Department = (typeof DEPARTMENTS)[number];
